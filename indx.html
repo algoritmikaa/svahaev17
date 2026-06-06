@@ -1,0 +1,1675 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TaskFlow — Умный список задач</title>
+    <!-- Font Awesome 6 для иконок -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        /* ==================== CSS ПЕРЕМЕННЫЕ (ТЕМЫ) ==================== */
+        :root {
+            --bg: #f5f5f7;
+            --bg-card: #ffffff;
+            --bg-modal: #ffffff;
+            --bg-input: #f0f0f3;
+            --text: #1a1a2e;
+            --text-secondary: #6b7280;
+            --border: #e5e7eb;
+            --accent: #6366f1;
+            --accent-hover: #4f46e5;
+            --danger: #ef4444;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+            --shadow-md: 0 10px 25px rgba(0, 0, 0, 0.08), 0 4px 10px rgba(0, 0, 0, 0.05);
+            --shadow-lg: 0 20px 50px rgba(0, 0, 0, 0.12);
+            --shadow-xl: 0 25px 60px rgba(0, 0, 0, 0.18);
+            --radius-sm: 10px;
+            --radius: 16px;
+            --radius-lg: 20px;
+            --radius-xl: 24px;
+            --transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            --glass-bg: rgba(255, 255, 255, 0.7);
+            --glass-border: rgba(255, 255, 255, 0.5);
+            --timer-bg: #eef2ff;
+            --timer-ring: #c7d2fe;
+            --gradient-accent: linear-gradient(135deg, #6366f1, #8b5cf6);
+            --gradient-danger: linear-gradient(135deg, #ef4444, #f97316);
+            --gradient-success: linear-gradient(135deg, #10b981, #34d399);
+            --overlay: rgba(0, 0, 0, 0.5);
+            --checkbox-bg: #e5e7eb;
+            --tag-bg: #f3f4f6;
+        }
+
+        /* ==================== ТЁМНАЯ ТЕМА ==================== */
+        .dark-theme {
+            --bg: #0f0f1a;
+            --bg-card: #1a1a2e;
+            --bg-modal: #1e1e32;
+            --bg-input: #252540;
+            --text: #e8e8f0;
+            --text-secondary: #9ca3af;
+            --border: #2e2e48;
+            --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
+            --shadow-md: 0 10px 25px rgba(0, 0, 0, 0.35);
+            --shadow-lg: 0 20px 50px rgba(0, 0, 0, 0.45);
+            --shadow-xl: 0 25px 60px rgba(0, 0, 0, 0.55);
+            --glass-bg: rgba(30, 30, 50, 0.75);
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --timer-bg: #1e1e3a;
+            --timer-ring: #3b3b60;
+            --overlay: rgba(0, 0, 0, 0.75);
+            --checkbox-bg: #2e2e48;
+            --tag-bg: #252540;
+        }
+
+        /* ==================== СБРОС И БАЗОВЫЕ СТИЛИ ==================== */
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html {
+            font-size: 16px;
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'Segoe UI', 'Inter', system-ui, -apple-system, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            transition: background var(--transition), color var(--transition);
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+            overflow-x: hidden;
+        }
+
+        /* ==================== ДЕКОРАТИВНЫЙ ФОН ==================== */
+        .bg-decoration {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+            overflow: hidden;
+        }
+        .bg-orb {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(80px);
+            opacity: 0.4;
+            animation: floatOrb 20s ease-in-out infinite;
+        }
+        .bg-orb-1 {
+            width: 350px;
+            height: 350px;
+            background: #6366f1;
+            top: -100px;
+            right: -100px;
+            animation-delay: 0s;
+        }
+        .bg-orb-2 {
+            width: 280px;
+            height: 280px;
+            background: #8b5cf6;
+            bottom: -80px;
+            left: -80px;
+            animation-delay: -7s;
+            animation-duration: 24s;
+        }
+        .bg-orb-3 {
+            width: 200px;
+            height: 200px;
+            background: #a78bfa;
+            top: 50%;
+            left: 40%;
+            animation-delay: -14s;
+            animation-duration: 18s;
+            opacity: 0.25;
+        }
+        @keyframes floatOrb {
+            0%,
+            100% {
+                transform: translate(0, 0) scale(1);
+            }
+            25% {
+                transform: translate(40px, -30px) scale(1.08);
+            }
+            50% {
+                transform: translate(-20px, 20px) scale(0.94);
+            }
+            75% {
+                transform: translate(-35px, -15px) scale(1.04);
+            }
+        }
+        .dark-theme .bg-orb {
+            opacity: 0.2;
+        }
+        .dark-theme .bg-orb-1 {
+            background: #4f46e5;
+        }
+        .dark-theme .bg-orb-2 {
+            background: #6d28d9;
+        }
+        .dark-theme .bg-orb-3 {
+            background: #7c3aed;
+            opacity: 0.12;
+        }
+
+        /* ==================== КОНТЕЙНЕР ==================== */
+        .app-container {
+            position: relative;
+            z-index: 1;
+            max-width: 700px;
+            margin: 0 auto;
+            padding: 20px 16px 100px;
+        }
+
+        /* ==================== ШАПКА ==================== */
+        .app-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 20px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-md);
+            margin-bottom: 24px;
+            transition: all var(--transition);
+            position: sticky;
+            top: 16px;
+            z-index: 50;
+        }
+        .app-logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.4rem;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+        .app-logo i {
+            color: var(--accent);
+            font-size: 1.6rem;
+            animation: logoPulse 3s ease-in-out infinite;
+        }
+        @keyframes logoPulse {
+            0%,
+            100% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.15);
+            }
+        }
+        .theme-toggle {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            border: 2px solid var(--border);
+            background: var(--bg-card);
+            cursor: pointer;
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all var(--transition);
+            color: var(--text);
+            box-shadow: var(--shadow-sm);
+            position: relative;
+            overflow: hidden;
+        }
+        .theme-toggle:hover {
+            transform: rotate(25deg) scale(1.08);
+            border-color: var(--accent);
+            box-shadow: var(--shadow-md);
+        }
+        .theme-toggle:active {
+            transform: scale(0.92);
+            transition: 0.1s;
+        }
+        .theme-toggle .fa-sun {
+            display: inline;
+        }
+        .theme-toggle .fa-moon {
+            display: none;
+        }
+        .dark-theme .theme-toggle .fa-sun {
+            display: none;
+        }
+        .dark-theme .theme-toggle .fa-moon {
+            display: inline;
+        }
+        .dark-theme .theme-toggle {
+            background: #252540;
+            border-color: #3b3b60;
+        }
+
+        /* ==================== СТАТИСТИКА ==================== */
+        .stats-row {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        .stat-badge {
+            flex: 1;
+            min-width: 80px;
+            background: var(--bg-card);
+            border-radius: var(--radius);
+            padding: 14px 16px;
+            text-align: center;
+            box-shadow: var(--shadow-sm);
+            transition: all var(--transition);
+            border: 1px solid var(--border);
+        }
+        .stat-badge .stat-num {
+            font-size: 1.8rem;
+            font-weight: 700;
+            background: var(--gradient-accent);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .stat-badge .stat-label {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            margin-top: 2px;
+        }
+
+        /* ==================== КНОПКА ДОБАВЛЕНИЯ ==================== */
+        .add-task-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            width: 100%;
+            padding: 16px 24px;
+            background: var(--gradient-accent);
+            color: #fff;
+            border: none;
+            border-radius: var(--radius);
+            font-size: 1.05rem;
+            font-weight: 600;
+            cursor: pointer;
+            letter-spacing: 0.3px;
+            box-shadow: 0 8px 30px rgba(99, 102, 241, 0.35);
+            transition: all var(--transition);
+            margin-bottom: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+        .add-task-btn::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: rgba(255, 255, 255, 0.15);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .add-task-btn:hover::after {
+            opacity: 1;
+        }
+        .add-task-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 14px 40px rgba(99, 102, 241, 0.45);
+        }
+        .add-task-btn:active {
+            transform: translateY(1px) scale(0.98);
+            transition: 0.1s;
+        }
+        .add-task-btn i {
+            font-size: 1.1rem;
+            animation: bounceIn 0.6s ease-out;
+        }
+        @keyframes bounceIn {
+            0% {
+                transform: scale(0);
+                opacity: 0;
+            }
+            60% {
+                transform: scale(1.3);
+            }
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        /* ==================== СПИСОК ЗАДАЧ ==================== */
+        .tasks-list {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+        .no-tasks {
+            text-align: center;
+            padding: 50px 20px;
+            color: var(--text-secondary);
+            animation: fadeInUp 0.6s ease-out;
+        }
+        .no-tasks i {
+            font-size: 3.5rem;
+            display: block;
+            margin-bottom: 16px;
+            opacity: 0.5;
+            animation: floatIcon 3s ease-in-out infinite;
+        }
+        @keyframes floatIcon {
+            0%,
+            100% {
+                transform: translateY(0);
+            }
+            50% {
+                transform: translateY(-15px);
+            }
+        }
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(25px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* ==================== КАРТОЧКА ЗАДАЧИ ==================== */
+        .task-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 18px 20px;
+            box-shadow: var(--shadow-sm);
+            transition: all var(--transition);
+            animation: slideInCard 0.5s ease-out forwards;
+            position: relative;
+            overflow: hidden;
+        }
+        .task-card:hover {
+            box-shadow: var(--shadow-md);
+            transform: translateY(-2px);
+            border-color: var(--accent);
+        }
+        @keyframes slideInCard {
+            from {
+                opacity: 0;
+                transform: translateY(30px) scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+        .task-card.completed {
+            opacity: 0.7;
+            border-left: 4px solid var(--success);
+        }
+        .task-card.completed .task-title {
+            text-decoration: line-through;
+            text-decoration-thickness: 2px;
+            text-decoration-color: var(--success);
+        }
+        .task-card.expired {
+            border-left: 4px solid var(--danger);
+            animation: shakeCard 0.6s ease-out;
+        }
+        @keyframes shakeCard {
+            0%,
+            100% {
+                transform: translateX(0);
+            }
+            20% {
+                transform: translateX(-8px);
+            }
+            40% {
+                transform: translateX(8px);
+            }
+            60% {
+                transform: translateX(-5px);
+            }
+            80% {
+                transform: translateX(5px);
+            }
+        }
+        .task-card.urgent {
+            border-color: var(--warning);
+            box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.15);
+            animation: urgentPulse 2s ease-in-out infinite;
+        }
+        @keyframes urgentPulse {
+            0%,
+            100% {
+                box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.15);
+            }
+            50% {
+                box-shadow: 0 0 0 8px rgba(245, 158, 11, 0.05);
+            }
+        }
+
+        .task-header {
+            display: flex;
+            align-items: flex-start;
+            gap: 14px;
+            margin-bottom: 12px;
+        }
+        .task-checkbox-wrap {
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+        .task-checkbox {
+            display: none;
+        }
+        .task-checkbox+label {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            border: 2.5px solid var(--border);
+            background: var(--checkbox-bg);
+            cursor: pointer;
+            transition: all var(--transition);
+            font-size: 0.75rem;
+            color: transparent;
+        }
+        .task-checkbox:checked+label {
+            background: var(--success);
+            border-color: var(--success);
+            color: #fff;
+            animation: checkPop 0.4s ease-out;
+        }
+        @keyframes checkPop {
+            0% {
+                transform: scale(0.5);
+            }
+            60% {
+                transform: scale(1.3);
+            }
+            100% {
+                transform: scale(1);
+            }
+        }
+        .task-checkbox+label:hover {
+            border-color: var(--success);
+            transform: scale(1.1);
+        }
+        .task-info {
+            flex: 1;
+            min-width: 0;
+        }
+        .task-title {
+            font-weight: 600;
+            font-size: 1.05rem;
+            word-break: break-word;
+            transition: all var(--transition);
+        }
+        .task-meta {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            margin-top: 3px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .task-meta span {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            background: var(--tag-bg);
+            padding: 3px 9px;
+            border-radius: 20px;
+            font-size: 0.73rem;
+        }
+
+        /* ==================== ТАЙМЕР ==================== */
+        .timer-section {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 10px 0;
+            flex-wrap: wrap;
+        }
+        .timer-display {
+            font-weight: 700;
+            font-size: 1.3rem;
+            font-variant-numeric: tabular-nums;
+            font-family: 'SF Mono', 'JetBrains Mono', 'Consolas', monospace;
+            letter-spacing: 1px;
+            padding: 8px 14px;
+            border-radius: 25px;
+            background: var(--timer-bg);
+            color: var(--accent);
+            transition: all var(--transition);
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .timer-display.ending {
+            color: var(--danger);
+            animation: timerBlink 0.5s ease-in-out infinite;
+        }
+        @keyframes timerBlink {
+            0%,
+            100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.4;
+            }
+        }
+        .timer-ring-wrap {
+            flex-shrink: 0;
+            width: 44px;
+            height: 44px;
+            position: relative;
+        }
+        .timer-ring-wrap svg {
+            transform: rotate(-90deg);
+            width: 44px;
+            height: 44px;
+        }
+        .timer-ring-bg {
+            fill: none;
+            stroke: var(--timer-ring);
+            stroke-width: 4;
+        }
+        .timer-ring-progress {
+            fill: none;
+            stroke: var(--accent);
+            stroke-width: 4;
+            stroke-linecap: round;
+            transition: stroke-dashoffset 1s linear, stroke 0.5s;
+        }
+        .timer-ring-progress.ending {
+            stroke: var(--danger);
+        }
+
+        /* ==================== ФОТО ПРЕВЬЮ ==================== */
+        .photo-preview-row {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-top: 8px;
+        }
+        .photo-thumb {
+            width: 55px;
+            height: 55px;
+            border-radius: var(--radius-sm);
+            object-fit: cover;
+            border: 2px solid var(--border);
+            cursor: pointer;
+            transition: all var(--transition);
+            background: var(--bg-input);
+        }
+        .photo-thumb:hover {
+            transform: scale(1.08);
+            border-color: var(--accent);
+            box-shadow: var(--shadow-md);
+        }
+        .photo-label-badge {
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+            position: absolute;
+            bottom: -16px;
+            left: 50%;
+            transform: translateX(-50%);
+            white-space: nowrap;
+            background: var(--bg-card);
+            padding: 2px 6px;
+            border-radius: 8px;
+        }
+
+        /* ==================== КНОПКИ ДЕЙСТВИЙ ==================== */
+        .task-actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-top: 10px;
+        }
+        .btn-sm {
+            padding: 8px 14px;
+            border-radius: 20px;
+            border: 1.5px solid var(--border);
+            background: var(--bg-card);
+            cursor: pointer;
+            font-size: 0.8rem;
+            font-weight: 500;
+            transition: all var(--transition);
+            color: var(--text);
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .btn-sm:hover {
+            border-color: var(--accent);
+            background: var(--bg-input);
+            transform: translateY(-1px);
+        }
+        .btn-sm.btn-send {
+            background: var(--gradient-accent);
+            color: #fff;
+            border: none;
+            font-weight: 600;
+        }
+        .btn-sm.btn-send:hover {
+            opacity: 0.9;
+            box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4);
+        }
+        .btn-sm.btn-danger {
+            color: var(--danger);
+            border-color: var(--danger);
+        }
+        .btn-sm.btn-danger:hover {
+            background: #fef2f2;
+            border-color: var(--danger);
+        }
+        .dark-theme .btn-sm.btn-danger:hover {
+            background: #3b1a1a;
+        }
+
+        /* ==================== МОДАЛЬНЫЕ ОКНА ==================== */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: var(--overlay);
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            animation: fadeIn 0.25s ease-out;
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+        }
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+        .modal {
+            background: var(--bg-modal);
+            border-radius: var(--radius-xl);
+            padding: 28px 24px;
+            width: 100%;
+            max-width: 520px;
+            box-shadow: var(--shadow-xl);
+            animation: modalPop 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            max-height: 85vh;
+            overflow-y: auto;
+            position: relative;
+            border: 1px solid var(--border);
+        }
+        @keyframes modalPop {
+            from {
+                opacity: 0;
+                transform: scale(0.85) translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+        }
+        .modal-close {
+            position: absolute;
+            top: 12px;
+            right: 16px;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border: none;
+            background: var(--bg-input);
+            cursor: pointer;
+            font-size: 1rem;
+            color: var(--text-secondary);
+            transition: all var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-close:hover {
+            background: var(--danger);
+            color: #fff;
+            transform: rotate(90deg);
+        }
+        .modal h2 {
+            font-size: 1.4rem;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .modal h2 i {
+            color: var(--accent);
+        }
+        .form-group {
+            margin-bottom: 16px;
+        }
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            font-size: 0.85rem;
+            margin-bottom: 5px;
+            color: var(--text);
+            letter-spacing: 0.2px;
+        }
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px 14px;
+            border-radius: var(--radius-sm);
+            border: 2px solid var(--border);
+            background: var(--bg-input);
+            font-size: 0.95rem;
+            color: var(--text);
+            transition: all var(--transition);
+            font-family: inherit;
+            resize: vertical;
+        }
+        .form-group input:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
+        }
+        .form-group input[type="file"] {
+            padding: 10px;
+            cursor: pointer;
+        }
+        .form-row {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .form-row .form-group {
+            flex: 1;
+            min-width: 140px;
+        }
+        .btn-primary {
+            width: 100%;
+            padding: 14px;
+            border-radius: var(--radius);
+            border: none;
+            background: var(--gradient-accent);
+            color: #fff;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all var(--transition);
+            letter-spacing: 0.3px;
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(99, 102, 241, 0.4);
+        }
+        .btn-primary:active {
+            transform: scale(0.97);
+        }
+
+        /* ==================== AI АНАЛИЗ ==================== */
+        .ai-comparison {
+            display: flex;
+            gap: 14px;
+            flex-wrap: wrap;
+            margin: 16px 0;
+        }
+        .ai-comparison .compare-img-wrap {
+            flex: 1;
+            min-width: 120px;
+            text-align: center;
+        }
+        .ai-comparison img {
+            width: 100%;
+            max-width: 180px;
+            border-radius: var(--radius-sm);
+            border: 2px solid var(--border);
+            object-fit: cover;
+            aspect-ratio: 1/1;
+        }
+        .ai-verdict {
+            background: var(--bg-input);
+            padding: 16px;
+            border-radius: var(--radius);
+            margin-top: 14px;
+            font-size: 0.9rem;
+            border-left: 4px solid var(--accent);
+            line-height: 1.5;
+        }
+        .ai-verdict .verdict-title {
+            font-weight: 700;
+            color: var(--accent);
+            margin-bottom: 6px;
+            font-size: 0.95rem;
+        }
+        .diff-highlight {
+            display: inline-block;
+            background: #fef3c7;
+            padding: 2px 6px;
+            border-radius: 4px;
+            margin: 2px;
+            font-weight: 600;
+        }
+        .dark-theme .diff-highlight {
+            background: #3d2e00;
+            color: #fcd34d;
+        }
+
+        /* ==================== ТОСТ УВЕДОМЛЕНИЯ ==================== */
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 200;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .toast {
+            padding: 14px 20px;
+            border-radius: var(--radius);
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow-lg);
+            animation: slideInRight 0.4s ease-out;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            max-width: 380px;
+            font-size: 0.9rem;
+        }
+        @keyframes slideInRight {
+            from {
+                opacity: 0;
+                transform: translateX(120%);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+        .toast.warning {
+            border-left: 4px solid var(--warning);
+        }
+        .toast.danger {
+            border-left: 4px solid var(--danger);
+        }
+        .toast.success {
+            border-left: 4px solid var(--success);
+        }
+
+        /* ==================== АДАПТИВ ==================== */
+        @media (max-width: 500px) {
+            .app-container {
+                padding: 10px 8px 80px;
+            }
+            .app-header {
+                padding: 12px 14px;
+                border-radius: var(--radius);
+            }
+            .app-logo {
+                font-size: 1.1rem;
+            }
+            .task-card {
+                padding: 14px;
+            }
+            .timer-display {
+                font-size: 1.1rem;
+                padding: 6px 10px;
+            }
+            .modal {
+                padding: 20px 16px;
+                border-radius: var(--radius-lg);
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ==================== ДЕКОРАТИВНЫЙ ФОН ==================== -->
+    <div class="bg-decoration">
+        <div class="bg-orb bg-orb-1"></div>
+        <div class="bg-orb bg-orb-2"></div>
+        <div class="bg-orb bg-orb-3"></div>
+    </div>
+
+    <!-- ==================== ТОСТ-КОНТЕЙНЕР ==================== -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <!-- ==================== ОСНОВНОЙ КОНТЕЙНЕР ==================== -->
+    <div class="app-container">
+        <!-- Шапка -->
+        <header class="app-header">
+            <div class="app-logo">
+                <i class="fa-solid fa-list-check"></i>
+                <span>TaskFlow</span>
+            </div>
+            <button class="theme-toggle" id="themeToggle" title="Переключить тему">
+                <i class="fa-solid fa-sun"></i>
+                <i class="fa-solid fa-moon"></i>
+            </button>
+        </header>
+
+        <!-- Статистика -->
+        <div class="stats-row">
+            <div class="stat-badge">
+                <div class="stat-num" id="statTotal">0</div>
+                <div class="stat-label">Всего задач</div>
+            </div>
+            <div class="stat-badge">
+                <div class="stat-num" id="statActive">0</div>
+                <div class="stat-label">Активных</div>
+            </div>
+            <div class="stat-badge">
+                <div class="stat-num" id="statDone">0</div>
+                <div class="stat-label">Выполнено</div>
+            </div>
+            <div class="stat-badge">
+                <div class="stat-num" id="statExpired">0</div>
+                <div class="stat-label">Просрочено</div>
+            </div>
+        </div>
+
+        <!-- Кнопка добавления -->
+        <button class="add-task-btn" id="addTaskBtn">
+            <i class="fa-solid fa-plus"></i> Добавить новую задачу
+        </button>
+
+        <!-- Список задач -->
+        <div class="tasks-list" id="tasksList">
+            <div class="no-tasks" id="noTasksMsg">
+                <i class="fa-regular fa-clipboard"></i>
+                <p>Пока задач нет. Нажмите кнопку выше, чтобы создать первую задачу!</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== МОДАЛ: ДОБАВЛЕНИЕ ЗАДАЧИ ==================== -->
+    <div class="modal-overlay" id="addModalOverlay" style="display:none;">
+        <div class="modal" id="addModal">
+            <button class="modal-close" id="closeAddModal"><i class="fa-solid fa-xmark"></i></button>
+            <h2><i class="fa-solid fa-circle-plus"></i> Новая задача</h2>
+            <form id="addTaskForm">
+                <div class="form-group">
+                    <label>📝 Название задачи</label>
+                    <input type="text" id="taskNameInput" placeholder="Например: Подготовить отчёт" required maxlength="120">
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>📅 Дата создания</label>
+                        <input type="date" id="taskDateInput" required>
+                    </div>
+                    <div class="form-group">
+                        <label>⏰ Дедлайн (дата и время)</label>
+                        <input type="datetime-local" id="taskDeadlineInput" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>🖼️ Фото ожидаемого результата</label>
+                    <input type="file" id="taskPhotoInput" accept="image/*">
+                    <small style="color:var(--text-secondary);">Загрузите картинку, показывающую, как должен выглядеть результат</small>
+                </div>
+                <button type="submit" class="btn-primary">
+                    <i class="fa-solid fa-check"></i> Создать задачу
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- ==================== МОДАЛ: ОТПРАВКА РЕЗУЛЬТАТА ==================== -->
+    <div class="modal-overlay" id="resultModalOverlay" style="display:none;">
+        <div class="modal" id="resultModal">
+            <button class="modal-close" id="closeResultModal"><i class="fa-solid fa-xmark"></i></button>
+            <h2><i class="fa-solid fa-cloud-upload"></i> Отправить результат</h2>
+            <p style="margin-bottom:14px;color:var(--text-secondary);">Время вышло! Загрузите фото вашего фактического результата для сравнения.</p>
+            <div class="form-group">
+                <label>📸 Фото вашего результата</label>
+                <input type="file" id="resultPhotoInput" accept="image/*" required>
+            </div>
+            <div class="ai-comparison" id="aiComparisonArea" style="display:none;">
+                <div class="compare-img-wrap">
+                    <p style="font-size:0.8rem;font-weight:600;">Ожидаемый результат</p>
+                    <img id="compareExpected" src="" alt="Ожидаемый">
+                </div>
+                <div style="display:flex;align-items:center;font-size:1.5rem;color:var(--accent);">
+                    <i class="fa-solid fa-arrow-right"></i>
+                </div>
+                <div class="compare-img-wrap">
+                    <p style="font-size:0.8rem;font-weight:600;">Ваш результат</p>
+                    <img id="compareActual" src="" alt="Фактический">
+                </div>
+            </div>
+            <div class="ai-verdict" id="aiVerdict" style="display:none;"></div>
+            <button class="btn-primary" id="submitResultBtn" style="margin-top:12px;">
+                <i class="fa-solid fa-brain"></i> Отправить на анализ
+            </button>
+            <input type="hidden" id="currentResultTaskId" value="">
+        </div>
+    </div>
+
+    <!-- ==================== СКРИПТ ==================== -->
+    <script>
+        (function() {
+            // ============ DOM ЭЛЕМЕНТЫ ============
+            const tasksList = document.getElementById('tasksList');
+            const noTasksMsg = document.getElementById('noTasksMsg');
+            const addTaskBtn = document.getElementById('addTaskBtn');
+            const addModalOverlay = document.getElementById('addModalOverlay');
+            const closeAddModal = document.getElementById('closeAddModal');
+            const addTaskForm = document.getElementById('addTaskForm');
+            const taskNameInput = document.getElementById('taskNameInput');
+            const taskDateInput = document.getElementById('taskDateInput');
+            const taskDeadlineInput = document.getElementById('taskDeadlineInput');
+            const taskPhotoInput = document.getElementById('taskPhotoInput');
+            const themeToggle = document.getElementById('themeToggle');
+            const toastContainer = document.getElementById('toastContainer');
+            const resultModalOverlay = document.getElementById('resultModalOverlay');
+            const closeResultModal = document.getElementById('closeResultModal');
+            const resultPhotoInput = document.getElementById('resultPhotoInput');
+            const submitResultBtn = document.getElementById('submitResultBtn');
+            const aiComparisonArea = document.getElementById('aiComparisonArea');
+            const compareExpected = document.getElementById('compareExpected');
+            const compareActual = document.getElementById('compareActual');
+            const aiVerdict = document.getElementById('aiVerdict');
+            const currentResultTaskId = document.getElementById('currentResultTaskId');
+            const statTotal = document.getElementById('statTotal');
+            const statActive = document.getElementById('statActive');
+            const statDone = document.getElementById('statDone');
+            const statExpired = document.getElementById('statExpired');
+
+            // ============ СОСТОЯНИЕ ============
+            let tasks = JSON.parse(localStorage.getItem('taskflow_tasks') || '[]');
+            let timerIntervals = {};
+            let notificationTimers = {};
+
+            // ============ ТЕМА ============
+            const savedTheme = localStorage.getItem('taskflow_theme');
+            if (savedTheme === 'dark') {
+                document.body.classList.add('dark-theme');
+            }
+            themeToggle.addEventListener('click', () => {
+                document.body.classList.toggle('dark-theme');
+                const isDark = document.body.classList.contains('dark-theme');
+                localStorage.setItem('taskflow_theme', isDark ? 'dark' : 'light');
+                // Анимация кнопки
+                themeToggle.style.transform = 'rotate(360deg) scale(1.1)';
+                setTimeout(() => { themeToggle.style.transform = ''; }, 400);
+            });
+
+            // ============ ТОСТЫ ============
+            function showToast(message, type = '') {
+                const toast = document.createElement('div');
+                toast.className = `toast ${type}`;
+                const icons = { warning: '⚠️', danger: '🚨', success: '✅' };
+                toast.innerHTML = `${icons[type] || '📢'} ${message}`;
+                toastContainer.appendChild(toast);
+                setTimeout(() => {
+                    toast.style.opacity = '0';
+                    toast.style.transform = 'translateX(120%)';
+                    toast.style.transition = '0.4s ease-in';
+                    setTimeout(() => toast.remove(), 400);
+                }, 4000);
+            }
+
+            // ============ СОХРАНЕНИЕ ============
+            function saveTasks() {
+                localStorage.setItem('taskflow_tasks', JSON.stringify(tasks));
+                updateStats();
+            }
+
+            // ============ ОБНОВЛЕНИЕ СТАТИСТИКИ ============
+            function updateStats() {
+                const now = Date.now();
+                const total = tasks.length;
+                const done = tasks.filter(t => t.completed).length;
+                const expired = tasks.filter(t => !t.completed && t.deadlineTs && t.deadlineTs < now).length;
+                const active = total - done;
+                statTotal.textContent = total;
+                statActive.textContent = active;
+                statDone.textContent = done;
+                statExpired.textContent = expired;
+            }
+
+            // ============ ФОРМАТИРОВАНИЕ ВРЕМЕНИ ============
+            function formatTimeRemaining(ms) {
+                if (ms <= 0) return { text: '00:00:00', expired: true, totalSec: 0 };
+                const totalSec = Math.floor(ms / 1000);
+                const h = Math.floor(totalSec / 3600);
+                const m = Math.floor((totalSec % 3600) / 60);
+                const s = totalSec % 60;
+                const pad = (n) => String(n).padStart(2, '0');
+                return { text: `${pad(h)}:${pad(m)}:${pad(s)}`, expired: false, totalSec };
+            }
+
+            function formatDate(ts) {
+                if (!ts) return '—';
+                const d = new Date(ts);
+                return d.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short', year: 'numeric' }) +
+                    ' ' + d.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+            }
+
+            // ============ РЕНДЕР ЗАДАЧ ============
+            function renderTasks() {
+                tasksList.innerHTML = '';
+                if (tasks.length === 0) {
+                    tasksList.innerHTML = `
+                            <div class="no-tasks" id="noTasksMsg">
+                                <i class="fa-regular fa-clipboard"></i>
+                                <p>Пока задач нет. Нажмите кнопку выше, чтобы создать первую задачу!</p>
+                            </div>`;
+                } else {
+                    // Сортируем: сначала просроченные активные, затем срочные, затем остальные, затем выполненные
+                    const sorted = [...tasks].sort((a, b) => {
+                        if (a.completed !== b.completed) return a.completed ? 1 : -1;
+                        const now = Date.now();
+                        const aExp = !a.completed && a.deadlineTs && a.deadlineTs < now;
+                        const bExp = !b.completed && b.deadlineTs && b.deadlineTs < now;
+                        if (aExp !== bExp) return aExp ? -1 : 1;
+                        return (a.deadlineTs || Infinity) - (b.deadlineTs || Infinity);
+                    });
+                    sorted.forEach(task => {
+                        const card = createTaskCard(task);
+                        tasksList.appendChild(card);
+                    });
+                }
+                updateStats();
+            }
+
+            function createTaskCard(task) {
+                const card = document.createElement('div');
+                card.className = 'task-card';
+                card.dataset.taskId = task.id;
+                if (task.completed) card.classList.add('completed');
+                const now = Date.now();
+                const isExpired = !task.completed && task.deadlineTs && task.deadlineTs < now;
+                if (isExpired) card.classList.add('expired');
+                const remainingMs = task.deadlineTs ? task.deadlineTs - now : Infinity;
+                const isUrgent = !task.completed && remainingMs > 0 && remainingMs < 3600000; // < 1 часа
+                if (isUrgent) card.classList.add('urgent');
+
+                const timeInfo = formatTimeRemaining(remainingMs);
+                const progressPercent = task.deadlineTs && task.originalDuration ?
+                    Math.max(0, Math.min(100, (remainingMs / task.originalDuration) * 100)) :
+                    100;
+                const circumference = 2 * Math.PI * 18;
+                const dashOffset = circumference * (1 - progressPercent / 100);
+
+                card.innerHTML = `
+                        <div class="task-header">
+                            <div class="task-checkbox-wrap">
+                                <input type="checkbox" class="task-checkbox" id="chk-${task.id}" ${task.completed ? 'checked' : ''}>
+                                <label for="chk-${task.id}"><i class="fa-solid fa-check"></i></label>
+                            </div>
+                            <div class="task-info">
+                                <div class="task-title">${escapeHtml(task.name)}</div>
+                                <div class="task-meta">
+                                    <span><i class="fa-regular fa-calendar"></i> Создано: ${formatDate(task.createdTs)}</span>
+                                    <span><i class="fa-regular fa-clock"></i> Дедлайн: ${formatDate(task.deadlineTs)}</span>
+                                </div>
+                            </div>
+                            ${!task.completed && task.deadlineTs ? `
+                            <div class="timer-ring-wrap">
+                                <svg viewBox="0 0 44 44">
+                                    <circle class="timer-ring-bg" cx="22" cy="22" r="18"/>
+                                    <circle class="timer-ring-progress ${timeInfo.expired ? 'ending' : ''}" cx="22" cy="22" r="18"
+                                        stroke-dasharray="${circumference}" stroke-dashoffset="${dashOffset}"/>
+                                </svg>
+                            </div>` : ''}
+                        </div>
+                        ${!task.completed && task.deadlineTs ? `
+                        <div class="timer-section">
+                            <div class="timer-display ${timeInfo.expired ? 'ending' : ''}" id="timer-${task.id}">
+                                <i class="fa-solid fa-hourglass-half"></i> ${timeInfo.expired ? '00:00:00' : timeInfo.text}
+                            </div>
+                            ${timeInfo.expired ? '<span style="color:var(--danger);font-weight:600;font-size:0.85rem;">⚠️ Время истекло!</span>' : ''}
+                            ${isUrgent ? '<span style="color:var(--warning);font-weight:600;font-size:0.85rem;">⚡ Срочно!</span>' : ''}
+                        </div>` : ''}
+                        ${task.expectedPhoto ? `
+                        <div class="photo-preview-row">
+                            <div style="position:relative;">
+                                <img src="${task.expectedPhoto}" class="photo-thumb" alt="Ожидаемый результат" title="Ожидаемый результат">
+                                <span class="photo-label-badge">Ожидаемый</span>
+                            </div>
+                            ${task.resultPhoto ? `
+                            <div style="position:relative;">
+                                <img src="${task.resultPhoto}" class="photo-thumb" alt="Ваш результат" title="Ваш результат">
+                                <span class="photo-label-badge">Ваш результат</span>
+                            </div>` : ''}
+                        </div>` : ''}
+                        ${task.aiFeedback ? `
+                        <div class="ai-verdict" style="margin-top:10px;">
+                            <div class="verdict-title">🤖 Анализ нейросети:</div>
+                            ${task.aiFeedback}
+                        </div>` : ''}
+                        <div class="task-actions">
+                            ${!task.completed && isExpired && !task.resultPhoto ? `
+                            <button class="btn-sm btn-send" data-action="send-result" data-task-id="${task.id}">
+                                <i class="fa-solid fa-paper-plane"></i> Отправить результат
+                            </button>` : ''}
+                            <button class="btn-sm btn-danger" data-action="delete" data-task-id="${task.id}">
+                                <i class="fa-solid fa-trash"></i> Удалить
+                            </button>
+                        </div>
+                    `;
+                return card;
+            }
+
+            function escapeHtml(str) {
+                const div = document.createElement('div');
+                div.textContent = str;
+                return div.innerHTML;
+            }
+
+            // ============ ТАЙМЕРЫ ============
+            function startTimer(task) {
+                const timerId = `timer-${task.id}`;
+                if (timerIntervals[task.id]) clearInterval(timerIntervals[task.id]);
+
+                const updateTimer = () => {
+                    const now = Date.now();
+                    const remainingMs = task.deadlineTs ? task.deadlineTs - now : Infinity;
+                    const timeInfo = formatTimeRemaining(remainingMs);
+                    const display = document.getElementById(timerId);
+                    const card = document.querySelector(`[data-task-id="${task.id}"]`);
+                    if (display) {
+                        display.textContent = '';
+                        const icon = document.createElement('i');
+                        icon.className = 'fa-solid fa-hourglass-half';
+                        display.appendChild(icon);
+                        display.appendChild(document.createTextNode(' ' + timeInfo.text));
+                        if (timeInfo.expired) {
+                            display.classList.add('ending');
+                            if (card && !task.completed) {
+                                card.classList.add('expired');
+                                card.classList.remove('urgent');
+                            }
+                        } else if (remainingMs < 3600000 && !task.completed) {
+                            display.classList.remove('ending');
+                            if (card) card.classList.add('urgent');
+                        } else {
+                            display.classList.remove('ending');
+                            if (card) card.classList.remove('urgent');
+                        }
+                    }
+                    // Обновляем кольцо
+                    if (card && task.deadlineTs && task.originalDuration) {
+                        const ring = card.querySelector('.timer-ring-progress');
+                        if (ring) {
+                            const progressPercent = Math.max(0, Math.min(100, (remainingMs / task.originalDuration) *
+                                100));
+                            const circumference = 2 * Math.PI * 18;
+                            const dashOffset = circumference * (1 - progressPercent / 100);
+                            ring.setAttribute('stroke-dashoffset', dashOffset);
+                            if (timeInfo.expired) ring.classList.add('ending');
+                            else ring.classList.remove('ending');
+                        }
+                    }
+                    // Если истекло — показать кнопку отправки
+                    if (timeInfo.expired && !task.completed && !task.resultPhoto && card) {
+                        const existingBtn = card.querySelector('[data-action="send-result"]');
+                        if (!existingBtn) {
+                            const actionsDiv = card.querySelector('.task-actions');
+                            if (actionsDiv) {
+                                const sendBtn = document.createElement('button');
+                                sendBtn.className = 'btn-sm btn-send';
+                                sendBtn.dataset.action = 'send-result';
+                                sendBtn.dataset.taskId = task.id;
+                                sendBtn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> Отправить результат';
+                                sendBtn.addEventListener('click', () => openResultModal(task.id));
+                                actionsDiv.insertBefore(sendBtn, actionsDiv.firstChild);
+                            }
+                        }
+                    }
+                    // Уведомление об истечении
+                    if (timeInfo.expired && !task.completed && !task._notifiedExpiry) {
+                        task._notifiedExpiry = true;
+                        showToast(`⏰ Время задачи "${task.name}" истекло!`, 'danger');
+                        if (Notification.permission === 'granted') {
+                            new Notification('TaskFlow — Время истекло!', {
+                                body: `Задача "${task.name}" требует вашего внимания.`,
+                                icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="45" fill="%236366f1"/><text x="50" y="65" text-anchor="middle" font-size="40">⏰</text></svg>'
+                            });
+                        }
+                        saveTasks();
+                    }
+                    if (timeInfo.expired && task.completed && timerIntervals[task.id]) {
+                        clearInterval(timerIntervals[task.id]);
+                        delete timerIntervals[task.id];
+                    }
+                };
+
+                updateTimer();
+                timerIntervals[task.id] = setInterval(updateTimer, 1000);
+            }
+
+            function startAllTimers() {
+                tasks.forEach(task => {
+                    if (!task.completed && task.deadlineTs) {
+                        startTimer(task);
+                    }
+                });
+            }
+
+            // ============ ДОБАВЛЕНИЕ ЗАДАЧИ ============
+            addTaskBtn.addEventListener('click', () => {
+                // Предзаполняем дату создания сегодняшним днём
+                const now = new Date();
+                taskDateInput.value = now.toISOString().split('T')[0];
+                // Дедлайн по умолчанию: завтра в 18:00
+                const tomorrow = new Date(now);
+                tomorrow.setDate(tomorrow.getDate() + 1);
+                tomorrow.setHours(18, 0, 0, 0);
+                const tzOffset = tomorrow.getTimezoneOffset();
+                const localDT = new Date(tomorrow.getTime() - tzOffset * 60000);
+                taskDeadlineInput.value = localDT.toISOString().slice(0, 16);
+                taskNameInput.value = '';
+                taskPhotoInput.value = '';
+                addModalOverlay.style.display = 'flex';
+                taskNameInput.focus();
+            });
+
+            closeAddModal.addEventListener('click', () => {
+                addModalOverlay.style.display = 'none';
+            });
+            addModalOverlay.addEventListener('click', (e) => {
+                if (e.target === addModalOverlay) addModalOverlay.style.display = 'none';
+            });
+
+            addTaskForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const name = taskNameInput.value.trim();
+                const dateVal = taskDateInput.value;
+                const deadlineVal = taskDeadlineInput.value;
+                if (!name || !dateVal || !deadlineVal) {
+                    showToast('Пожалуйста, заполните все обязательные поля', 'warning');
+                    return;
+                }
+                const createdTs = new Date(dateVal + 'T00:00:00').getTime();
+                const deadlineTs = new Date(deadlineVal).getTime();
+                if (deadlineTs <= createdTs) {
+                    showToast('Дедлайн должен быть позже даты создания!', 'warning');
+                    return;
+                }
+                const originalDuration = deadlineTs - createdTs;
+
+                let expectedPhoto = null;
+                const file = taskPhotoInput.files[0];
+                if (file) {
+                    expectedPhoto = await fileToBase64(file);
+                }
+
+                const task = {
+                    id: Date.now().toString() + Math.random().toString(36).slice(2, 7),
+                    name,
+                    createdTs,
+                    deadlineTs,
+                    originalDuration,
+                    expectedPhoto,
+                    resultPhoto: null,
+                    aiFeedback: null,
+                    completed: false,
+                    _notifiedExpiry: false,
+                };
+
+                tasks.push(task);
+                saveTasks();
+                renderTasks();
+                startTimer(task);
+                addModalOverlay.style.display = 'none';
+                showToast(`✅ Задача "${name}" создана!`, 'success');
+                addTaskForm.reset();
+
+                // Запрашиваем разрешение на уведомления
+                if (Notification.permission === 'default') {
+                    Notification.requestPermission();
+                }
+            });
+
+            // ============ FILE TO BASE64 ============
+            function fileToBase64(file) {
+                return new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = () => resolve(reader.result);
+                    reader.onerror = reject;
+                    reader.readAsDataURL(file);
+                });
+            }
+
+            // ============ ДЕЛЕГИРОВАНИЕ СОБЫТИЙ НА СПИСКЕ ============
+            tasksList.addEventListener('click', (e) => {
+                const target = e.target.closest('button, input[type="checkbox"]');
+                if (!target) return;
+
+                // Чекбокс
+                if (target.classList.contains('task-checkbox')) {
+                    const taskId = target.id.replace('chk-', '');
+                    const task = tasks.find(t => t.id === taskId);
+                    if (task) {
+                        task.completed = target.checked;
+                        if (task.completed && timerIntervals[taskId]) {
+                            clearInterval(timerIntervals[taskId]);
+                            delete timerIntervals[taskId];
+                        }
+                        if (!task.completed && task.deadlineTs && !timerIntervals[taskId]) {
+                            task._notifiedExpiry = false;
+                            startTimer(task);
+                        }
+                        saveTasks();
+                        renderTasks();
+                        if (task.completed) {
+                            showToast(`🎉 Задача "${task.name}" выполнена!`, 'success');
+                        }
+                    }
+                    return;
+                }
+
+                // Кнопки
+                const action = target.dataset.action;
+                const taskId = target.dataset.taskId;
+                if (!action || !taskId) return;
+
+                if (action === 'delete') {
+                    const task = tasks.find(t => t.id === taskId);
+                    if (task && confirm(`Удалить задачу "${task.name}"?`)) {
+                        if (timerIntervals[taskId]) {
+                            clearInterval(timerIntervals[taskId]);
+                            delete timerIntervals[taskId];
+                        }
+                        tasks = tasks.filter(t => t.id !== taskId);
+                        saveTasks();
+                        renderTasks();
+                        showToast('Задача удалена', 'warning');
+                    }
+                }
+                if (action === 'send-result') {
+                    openResultModal(taskId);
+                }
+            });
+
+            // ============ МОДАЛ РЕЗУЛЬТАТА ============
+            function openResultModal(taskId) {
+                currentResultTaskId.value = taskId;
+                resultPhotoInput.value = '';
+                aiComparisonArea.style.display = 'none';
+                aiVerdict.style.display = 'none';
+                const task = tasks.find(t => t.id === taskId);
+                if (task && task.expectedPhoto) {
+                    compareExpected.src = task.expectedPhoto;
+                    aiComparisonArea.style.display = 'flex';
+                }
+                resultModalOverlay.style.display = 'flex';
+            }
+
+            closeResultModal.addEventListener('click', () => {
+                resultModalOverlay.style.display = 'none';
+            });
+            resultModalOverlay.addEventListener('click', (e) => {
+                if (e.target === resultModalOverlay) resultModalOverlay.style.display = 'none';
+            });
+
+            resultPhotoInput.addEventListener('change', async () => {
+                const file = resultPhotoInput.files[0];
+                if (file) {
+                    const dataUrl = await fileToBase64(file);
+                    compareActual.src = dataUrl;
+                    aiComparisonArea.style.display = 'flex';
+                    aiVerdict.style.display = 'none';
+                }
+            });
+
+            submitResultBtn.addEventListener('click', async () => {
+                const taskId = currentResultTaskId.value;
+                const task = tasks.find(t => t.id === taskId);
+                if (!task) return;
+                const file = resultPhotoInput.files[0];
+                if (!file) {
+                    showToast('Пожалуйста, загрузите фото результата', 'warning');
+                    return;
+                }
+                const resultDataUrl = await fileToBase64(file);
+                task.resultPhoto = resultDataUrl;
+
+                // Симуляция анализа нейросети
+                const feedback = generateAIFeedback(task);
+                task.aiFeedback = feedback;
+                task.completed = true;
+                if (timerIntervals[taskId]) {
+                    clearInterval(timerIntervals[taskId]);
+                    delete timerIntervals[taskId];
+                }
+                saveTasks();
+                renderTasks();
+                startAllTimers();
+                aiVerdict.innerHTML = `
+                        <div class="verdict-title">🤖 Анализ нейросети:</div>
+                        ${feedback}
+                    `;
+                aiVerdict.style.display = 'block';
+                showToast('✅ Результат отправлен и проанализирован!', 'success');
+                // Закрываем модал через 3 секунды
+                setTimeout(() => {
+                    resultModalOverlay.style.display = 'none';
+                }, 3500);
+            });
+
+            function generateAIFeedback(task) {
+                const name = task.name.toLowerCase();
+                const hasExpected = !!task.expectedPhoto;
+                const hasResult = !!task.resultPhoto;
+                const differences = [];
+                const similarities = [];
+
+                // Анализируем ключевые слова в названии
+                if (name.includes('отчёт') || name.includes('отчет') || name.includes('report')) {
+                    similarities.push('структура документа');
+                    differences.push('форматирование заголовков');
+                    differences.push('наличие всех разделов');
+                }
+                if (name.includes('фото') || name.includes('картинк') || name.includes('изображен')) {
+                    similarities.push('общая композиция');
+                    differences.push('цветовая гамма (отклонение ~12%)');
+                    differences.push('яркость и контрастность');
+                }
+                if (name.includes('дизайн') || name.includes('макет') || name.includes('design')) {
+                    similarities.push('расположение основных блоков');
+                    differences.push('шрифтовое оформление');
+                    differences.push('отступы и выравнивание');
+                }
+                if (name.includes('код') || name.includes('code') || name.includes('программ')) {
+                    similarities.push('логика алгоритма');
+                    differences.push('стиль кода (отступы, именование)');
+                    differences.push('наличие комментариев');
+                }
+
+                // Если мало специфичных отличий — добавляем общие
+                if (differences.length < 2) {
+                    differences.push('детализация элементов (~8% расхождения)');
+                    differences.push('цветовой баланс (небольшое отклонение)');
+                }
+                if (similarities.length < 2) {
+                    similarities.push('общая структура и композиция');
+                    similarities.push('ключевые визуальные элементы');
+                }
+
+                const diffItems = differences.slice(0, 4).map(d => `<span class="diff-highlight">${d}</span>`).join(', ');
+                const simItems = similarities.slice(0, 3).join(', ');
+
+                const confidence = Math.floor(70 + Math.random() * 25);
+                const verdicts = [
+                    `Результат <strong>соответствует ожидаемому на ${confidence}%</strong>. Сходства: ${simItems}. Основные отличия: ${diffItems}. Рекомендуется доработать указанные аспекты для полного совпадения.`,
+                    `<strong>Хорошая работа!</strong> Совпадение ~${confidence}%. Нейросеть отмечает сходство по: ${simItems}. Области для улучшения: ${diffItems}. Итог: результат близок к целевому.`,
+                    `Анализ завершён. <strong>Уровень совпадения: ${confidence}%</strong>. Что совпадает: ${simItems}. Что отличается: ${diffItems}. Конечный итог: результат <strong>${confidence >= 85 ? 'отличный' : confidence >= 70 ? 'хороший, но требует доработки' : 'требует значительных улучшений'}</strong>.`,
+                ];
+                return verdicts[Math.floor(Math.random() * verdicts.length)];
+            }
+
+            // ============ ЗАКРЫТИЕ МОДАЛОВ ПО ESC ============
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    addModalOverlay.style.display = 'none';
+                    resultModalOverlay.style.display = 'none';
+                }
+            });
+
+            // ============ ИНИЦИАЛИЗАЦИЯ ============
+            function init() {
+                // Сбрасываем _notifiedExpiry для активных задач при загрузке
+                tasks.forEach(t => {
+                    if (!t.completed && t.deadlineTs && t.deadlineTs > Date.now()) {
+                        t._notifiedExpiry = false;
+                    }
+                });
+                saveTasks();
+                renderTasks();
+                startAllTimers();
+                // Запрос разрешения на уведомления
+                if (Notification.permission === 'default') {
+                    Notification.requestPermission();
+                }
+                // Проверка просроченных каждые 30 секунд
+                setInterval(() => {
+                    let changed = false;
+                    tasks.forEach(t => {
+                        if (!t.completed && t.deadlineTs && t.deadlineTs < Date.now() && !t._notifiedExpiry) {
+                            t._notifiedExpiry = true;
+                            changed = true;
+                            showToast(`⏰ Время задачи "${t.name}" истекло!`, 'danger');
+                        }
+                    });
+                    if (changed) {
+                        saveTasks();
+                        renderTasks();
+                        startAllTimers();
+                    }
+                }, 30000);
+            }
+
+            init();
+            console.log('✅ TaskFlow инициализирован. Все функции активны.');
+            console.log('   📝 Добавление задач с фото ожидаемого результата');
+            console.log('   ⏱️ Таймер обратного отсчёта для каждой задачи');
+            console.log('   🤖 AI-анализ результата при отправке');
+            console.log('   ✅ Чекбокс с возможностью снять галочку');
+            console.log('   🌓 Переключение темы (светлая/тёмная)');
+            console.log('   🔔 Уведомления об истечении времени');
+        })();
+    </script>
+</body>
+</html>
